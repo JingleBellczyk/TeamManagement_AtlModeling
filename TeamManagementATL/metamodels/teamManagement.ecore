@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="teamManagement" nsURI="http://www.example.org/teamManagement"
+    nsPrefix="teamManagement">
+  <eClassifiers xsi:type="ecore:EClass" name="Project">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="title" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//ProjectStatus"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="endDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDate"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="budget" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="manager" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//Task" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="people" upperBound="-1"
+        eType="#//Person" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="teams" upperBound="-1"
+        eType="#//Team" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="milestones" upperBound="-1"
+        eType="#//Milestone" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Task">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="title" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="start" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="duration" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TaskStatus"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="priority" eType="#//Priority"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="estimatedHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="actualHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assignee" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="reviewer" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="effort" upperBound="-1"
+        eType="#//Effort" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="dependencies" upperBound="-1"
+        eType="#//Task"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="comments" upperBound="-1"
+        eType="#//Comment" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Person">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="email" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="role" eType="#//PersonRole"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="skills" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="availability" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="hourlyRate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="team" eType="#//Team"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Team">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="department" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="leader" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="members" upperBound="-1"
+        eType="#//Person"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Effort">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="person" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="percentage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="endDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="plannedHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="actualHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Comment">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="author" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="content" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="timestamp" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="#//CommentType"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Milestone">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="dueDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//MilestoneStatus"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//Task"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="ProjectStatus">
+    <eLiterals name="PLANNING" literal="PLANNING"/>
+    <eLiterals name="ACTIVE" value="1" literal="ACTIVE"/>
+    <eLiterals name="ON_HOLD" value="2" literal="ON_HOLD"/>
+    <eLiterals name="COMPLETED" value="3" literal="COMPLETED"/>
+    <eLiterals name="CANCELLED" value="4" literal="CANCELLED"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus">
+    <eLiterals name="TODO" literal="TODO"/>
+    <eLiterals name="IN_PROGRESS" value="1" literal="IN_PROGRESS"/>
+    <eLiterals name="REVIEW" value="2" literal="REVIEW"/>
+    <eLiterals name="TESTING" value="3" literal="TESTING"/>
+    <eLiterals name="DONE" value="4" literal="DONE"/>
+    <eLiterals name="BLOCKED" value="5" literal="BLOCKED"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="Priority">
+    <eLiterals name="LOW" literal="LOW"/>
+    <eLiterals name="MEDIUM" value="1" literal="MEDIUM"/>
+    <eLiterals name="HIGH" value="2" literal="HIGH"/>
+    <eLiterals name="CRITICAL" value="3" literal="CRITICAL"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="PersonRole">
+    <eLiterals name="DEVELOPER" literal="DEVELOPER"/>
+    <eLiterals name="SENIOR_DEVELOPER" value="1" literal="SENIOR_DEVELOPER"/>
+    <eLiterals name="SCRUM_MASTER" value="2" literal="SCRUM_MASTER"/>
+    <eLiterals name="PRODUCT_OWNER" value="3" literal="PRODUCT_OWNER"/>
+    <eLiterals name="DEVOPS" value="4" literal="DEVOPS"/>
+    <eLiterals name="TESTER" value="5" literal="TESTER"/>
+    <eLiterals name="ANALYST" value="6" literal="ANALYST"/>
+    <eLiterals name="ARCHITECT" value="7" literal="ARCHITECT"/>
+    <eLiterals name="PROJECT_MANAGER" value="8" literal="PROJECT_MANAGER"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="CommentType">
+    <eLiterals name="NOTE" literal="NOTE"/>
+    <eLiterals name="ISSUE" value="1" literal="ISSUE"/>
+    <eLiterals name="SUGGESTION" value="2" literal="SUGGESTION"/>
+    <eLiterals name="APPROVAL" value="3" literal="APPROVAL"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EEnum" name="MilestoneStatus">
+    <eLiterals name="PLANNED" literal="PLANNED"/>
+    <eLiterals name="IN_PROGRESS" value="1" literal="IN_PROGRESS"/>
+    <eLiterals name="ACHIEVED" value="2" literal="ACHIEVED"/>
+    <eLiterals name="DELAYED" value="3" literal="DELAYED"/>
+  </eClassifiers>
+</ecore:EPackage>

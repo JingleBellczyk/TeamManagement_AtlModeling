@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<teamManagement:Project xmi:version="2.0" 
+    xmlns:xmi="http://www.omg.org/XMI" 
+    xmlns:teamManagement="http://www.example.org/teamManagement"
+    xmi:id="proj1"
+    title="System CRM dla firmy XYZ"
+    description="Nowy system zarządzania klientami z integracją z istniejącymi systemami"
+    status="ACTIVE"
+    startDate="2025-06-01"
+    endDate="2025-10-31"
+    budget="120000.0">
+
+  <!-- Zespół -->
+  <people xmi:id="p1" name="Anna Kowalska" email="anna.kowalska@xyz.pl" role="PROJECT_MANAGER" availability="100" hourlyRate="80.0"/>
+  <people xmi:id="p2" name="Marcin Nowak" email="marcin.nowak@xyz.pl" role="SENIOR_DEVELOPER" availability="100" hourlyRate="70.0"/>
+  <people xmi:id="p3" name="Ewa Wiśniewska" email="ewa.wisniewska@xyz.pl" role="DEVELOPER" availability="80" hourlyRate="60.0"/>
+  <people xmi:id="p4" name="Tomasz Zieliński" email="tomasz.zielinski@xyz.pl" role="TESTER" availability="100" hourlyRate="50.0"/>
+  <people xmi:id="p5" name="Katarzyna Wójcik" email="katarzyna.wojcik@xyz.pl" role="ANALYST" availability="60" hourlyRate="75.0"/>
+
+  <!-- Manager projektu -->
+  <manager href="#p1"/>
+
+  <!-- Zespół -->
+  <teams xmi:id="t1" name="CRM Development Team" department="IT">
+    <leader href="#p1"/>
+    <members href="#p1"/>
+    <members href="#p2"/>
+    <members href="#p3"/>
+    <members href="#p4"/>
+    <members href="#p5"/>
+  </teams>
+
+  <!-- Zadania -->
+  <tasks xmi:id="task1" title="Analiza wymagań" description="Zbieranie i analiza wymagań biznesowych"
+         start="0" duration="10" status="DONE" priority="HIGH" estimatedHours="80" actualHours="75">
+    <assignee href="#p5"/>
+    <reviewer href="#p1"/>
+    <effort person="#p5" percentage="80" startDate="2025-06-01" endDate="2025-06-15" plannedHours="64" actualHours="60"/>
+    <effort person="#p1" percentage="20" startDate="2025-06-01" endDate="2025-06-15" plannedHours="16" actualHours="15"/>
+    <comments author="#p5" content="Wymagania zebrane i zatwierdzone przez klienta" timestamp="2025-06-15" type="APPROVAL"/>
+  </tasks>
+
+  <tasks xmi:id="task2" title="Projekt architektury" description="Projektowanie architektury systemu"
+         start="8" duration="8" status="IN_PROGRESS" priority="HIGH" estimatedHours="64" actualHours="32">
+    <assignee href="#p2"/>
+    <reviewer href="#p1"/>
+    <effort person="#p2" percentage="100" startDate="2025-06-12" endDate="2025-06-22" plannedHours="64" actualHours="32"/>
+    <comments author="#p2" content="Architektura mikroserwisowa, baza danych PostgreSQL" timestamp="2025-06-18" type="NOTE"/>
+  	<dependencies href="#task2"/>
+  </tasks>
+
+  <tasks xmi:id="task3" title="Implementacja modułu klientów" description="Backend i frontend dla zarządzania klientami"
+         start="15" duration="15" status="TODO" priority="MEDIUM" estimatedHours="120" actualHours="0">
+    <assignee href="#p3"/>
+    <reviewer href="#p2"/>
+    <effort person="#p3" percentage="70" startDate="2025-06-25" endDate="2025-07-15" plannedHours="84" actualHours="0"/>
+    <effort person="#p2" percentage="30" startDate="2025-06-25" endDate="2025-07-15" plannedHours="36" actualHours="0"/>
+  	<dependencies href="#task2"/>
+  </tasks>
+
+  <tasks xmi:id="task4" title="Implementacja modułu sprzedaży" description="Funkcjonalności związane ze sprzedażą i ofertami"
+         start="25" duration="20" status="TODO" priority="MEDIUM" estimatedHours="160" actualHours="0">
+    <assignee href="#p3"/>
+    <reviewer href="#p2"/>
+    <effort person="#p3" percentage="60" startDate="2025-07-10" endDate="2025-08-05" plannedHours="96" actualHours="0"/>
+    <effort person="#p2" percentage="40" startDate="2025-07-10" endDate="2025-08-05" plannedHours="64" actualHours="0"/>
+  	<dependencies href="#task3"/>
+  </tasks>
+
+  <tasks xmi:id="task5" title="Testy systemowe" description="Kompletne testowanie systemu"
+         start="40" duration="12" status="TODO" priority="HIGH" estimatedHours="96" actualHours="0">
+    <assignee href="#p4"/>
+    <reviewer href="#p1"/>
+    <effort person="#p4" percentage="80" startDate="2025-08-20" endDate="2025-09-05" plannedHours="77" actualHours="0"/>
+    <effort person="#p3" percentage="20" startDate="2025-08-20" endDate="2025-09-05" plannedHours="19" actualHours="0"/>
+  	<dependencies href="#task3"/>
+  	<dependencies href="#task4"/>
+  </tasks>
+
+  <!-- Kamienie milowe -->
+  <milestones xmi:id="m1" name="Zakończenie analizy" description="Wymagania zebrane i zatwierdzone"
+              dueDate="2025-06-15" status="ACHIEVED">
+    <tasks href="#task1"/>
+  </milestones>
+
+  <milestones xmi:id="m2" name="Gotowa architektura" description="Architektura zatwierdzona"
+              dueDate="2025-06-22" status="IN_PROGRESS">
+    <tasks href="#task2"/>
+  </milestones>
+
+  <milestones xmi:id="m3" name="MVP gotowe" description="Podstawowa funkcjonalność działająca"
+              dueDate="2025-08-15" status="PLANNED">
+    <tasks href="#task3"/>
+    <tasks href="#task4"/>
+  </milestones>
+
+  <milestones xmi:id="m4" name="System w produkcji" description="System przetestowany i wdrożony"
+              dueDate="2025-10-31" status="PLANNED">
+    <tasks href="#task5"/>
+  </milestones>
+
+</teamManagement:Project>

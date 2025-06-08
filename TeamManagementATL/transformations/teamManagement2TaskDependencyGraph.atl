@@ -1,0 +1,42 @@
+module teamManagement2TaskDependencyGraph;
+
+-- @path MMIn=/TeamManagementATL/metamodels/teamManagement.ecore
+-- @path MMOut=/TeamManagementATL/metamodels/taskDependencyGraph.ecore
+
+create OUT : MMOut from IN : MMIn;
+
+-- Task → TaskNode + zależności (Dependency)
+rule Task2Node {
+    from
+        t : MMIn!Task
+    to
+        node : MMOut!TaskNode (
+            id <- t.title,
+            title <- t.title,
+            status <- t.status.toString()
+        )
+    do {
+        -- Przetwarzanie zależności
+        t.dependencies->collect(d |
+            thisModule.CreateDependency(t, d)
+        );
+    }
+}
+
+-- Lazy rule: tworzy zależność (Dependency) między dwoma zadaniami
+lazy rule CreateDependency {
+    from
+        s : MMIn!Task,
+        t : MMIn!Task
+    to
+        d : MMOut!Dependency (
+            source <- thisModule.resolveTaskToNode(s),
+            target <- thisModule.resolveTaskToNode(t),
+            type <- 'FINISH_TO_START'
+        )
+}
+
+-- Helper: znajduje odpowiadający TaskNode na podstawie ID lub tytułu
+helper def : resolveTaskToNode(t : MMIn!Task) : MMOut!TaskNode =
+    MMOut!TaskNode.allInstances()->any(n | n.id = t.title);
+
