@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ecore:EPackage 
-    xmi:version="2.0" 
-    xmlns:xmi="http://www.omg.org/XMI" 
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" 
-    name="projectReport" 
-    nsURI="http://www.example.org/projectReport" 
+<ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="projectReport" nsURI="http://www.example.org/projectReport"
     nsPrefix="projectReport">
-
   <eClassifiers xsi:type="ecore:EClass" name="Report">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="projectTitle" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="summary" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="totalPeople" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="totalBudget" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" eType="#//ReportTask" upperBound="-1" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="milestones" eType="#//ReportMilestone" upperBound="-1" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="teams" eType="#//ReportTeam" upperBound="-1" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
+        eType="#//ReportTask" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="milestones" upperBound="-1"
+        eType="#//ReportMilestone" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="teams" upperBound="-1"
+        eType="#//ReportTeam" containment="true"/>
   </eClassifiers>
-
   <eClassifiers xsi:type="ecore:EClass" name="ReportTask">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="title" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//TaskStatus"/>
@@ -25,34 +21,28 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="estimatedHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="actualHours" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
   </eClassifiers>
-
   <eClassifiers xsi:type="ecore:EClass" name="ReportMilestone">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="dueDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="status" eType="#//MilestoneStatus"/>
   </eClassifiers>
-
   <eClassifiers xsi:type="ecore:EClass" name="ReportTeam">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="membersCount" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="leader" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-
-  <!-- Enumy TaskStatus i MilestoneStatus (kopiujemy z metamodelu źródłowego) -->
   <eClassifiers xsi:type="ecore:EEnum" name="TaskStatus">
     <eLiterals name="TODO"/>
-    <eLiterals name="IN_PROGRESS"/>
-    <eLiterals name="REVIEW"/>
-    <eLiterals name="TESTING"/>
-    <eLiterals name="DONE"/>
-    <eLiterals name="BLOCKED"/>
+    <eLiterals name="IN_PROGRESS" value="1"/>
+    <eLiterals name="REVIEW" value="2"/>
+    <eLiterals name="TESTING" value="3"/>
+    <eLiterals name="DONE" value="4"/>
+    <eLiterals name="BLOCKED" value="5"/>
   </eClassifiers>
-
   <eClassifiers xsi:type="ecore:EEnum" name="MilestoneStatus">
     <eLiterals name="PLANNED"/>
-    <eLiterals name="IN_PROGRESS"/>
-    <eLiterals name="ACHIEVED"/>
-    <eLiterals name="DELAYED"/>
+    <eLiterals name="IN_PROGRESS" value="1"/>
+    <eLiterals name="ACHIEVED" value="2"/>
+    <eLiterals name="DELAYED" value="3"/>
   </eClassifiers>
-
 </ecore:EPackage>
