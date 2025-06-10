@@ -5,38 +5,71 @@ module teamManagement2TaskDependencyGraph;
 
 create OUT : MMOut from IN : MMIn;
 
--- Task → TaskNode + zależności (Dependency)
+-- Główna reguła dla ProjectPortfolio -> Graph
+rule ProjectPortfolio2Graph {
+from
+    portfolio : MMIn!ProjectPortfolio
+to
+    graph : MMOut!Graph (
+        nodes <- portfolio.projects->collect(p | p.tasks)->flatten(),
+        dependencies <- portfolio.projects->collect(p | p.tasks)->flatten()
+                       ->collect(t | t.dependencies->collect(d | thisModule.CreateDependency(t, d)))->flatten()
+    )
+}
+
+-- Task → TaskNode z unikalnym ID uwzględniającym projekt
 rule Task2Node {
-    from
-        t : MMIn!Task
-    to
-        node : MMOut!TaskNode (
-            id <- t.title,
-            title <- t.title,
-            status <- t.status.toString()
-        )
-    do {
-        -- Przetwarzanie zależności
-        t.dependencies->collect(d |
-            thisModule.CreateDependency(t, d)
-        );
-    }
+from
+    t : MMIn!Task
+to
+    node : MMOut!TaskNode (
+        id <- thisModule.getTaskUniqueId(t),
+        title <- t.title,
+        status <- t.status.toString(),
+        projectId <- thisModule.getProjectId(t)
+    )
 }
 
--- Lazy rule: tworzy zależność (Dependency) między dwoma zadaniami
+-- Lazy rule: tworzy zależność między dwoma zadaniami
 lazy rule CreateDependency {
-    from
-        s : MMIn!Task,
-        t : MMIn!Task
-    to
-        d : MMOut!Dependency (
-            source <- thisModule.resolveTaskToNode(s),
-            target <- thisModule.resolveTaskToNode(t),
-            type <- 'FINISH_TO_START'
-        )
+from
+    sourceTask : MMIn!Task,
+    targetTask : MMIn!Task
+to
+    dep : MMOut!Dependency (
+        source <- thisModule.resolveTemp(sourceTask, 'node'),
+        target <- thisModule.resolveTemp(targetTask, 'node'), 
+        type <- 'FINISH_TO_START'
+    )
 }
 
--- Helper: znajduje odpowiadający TaskNode na podstawie ID lub tytułu
-helper def : resolveTaskToNode(t : MMIn!Task) : MMOut!TaskNode =
-    MMOut!TaskNode.allInstances()->any(n | n.id = t.title);
+-- Helper: tworzy unikalny ID zadania uwzględniający projekt
+helper def: getTaskUniqueId(t : MMIn!Task) : String =
+    thisModule.getProjectId(t) + '::' + t.title;
 
+-- Helper: znajduje ID projektu dla zadania
+helper def: getProjectId(t : MMIn!Task) : String =
+    let project : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(t)) in
+    if project.oclIsUndefined() then
+        'UNKNOWN_PROJECT'
+    else
+        if project.title.oclIsUndefined() then
+            'PROJECT_' + project.toString()
+        else
+            project.title
+        endif
+    endif;
+
+-- Helper: sprawdza czy zadanie należy do określonego projektu
+helper def: belongsToProject(task : MMIn!Task, project : MMIn!Project) : Boolean =
+    project.tasks->includes(task);
+
+-- Helper: pobiera wszystkie zadania z określonego projektu
+helper def: getTasksFromProject(project : MMIn!Project) : Sequence(MMIn!Task) =
+    project.tasks;
+
+-- Helper: sprawdza czy zależność jest wewnątrz projektu
+helper def: isDependencyWithinProject(sourceTask : MMIn!Task, targetTask : MMIn!Task) : Boolean =
+    let sourceProject : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(sourceTask)) in
+    let targetProject : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(targetTask)) in
+    sourceProject = targetProject;

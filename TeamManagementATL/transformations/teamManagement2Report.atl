@@ -1,62 +1,134 @@
 module teamManagement2Report;
-
 -- @path MMIn=/TeamManagementATL/metamodels/teamManagement.ecore
 -- @path MMOut=/TeamManagementATL/metamodels/projectReport.ecore
 
 create OUT : MMOut from IN : MMIn;
 
--- Główna reguła przekształcająca projekt
-rule ReportRoot {
+-- Jedna główna reguła bez lazy rules
+rule ProjectPortfolio2PortfolioReport {
     from
-        p : MMIn!Project
+        portfolio : MMIn!ProjectPortfolio
     to
-        r : MMOut!Report (
-            projectTitle <- p.title,
-            summary <- p.description,
-            totalPeople <- p.people->size(),
-            totalBudget <- p.budget,
-            tasks <- p.tasks->collect(t | thisModule.Task2ReportTask(t)),
-            milestones <- p.milestones->collect(m | thisModule.Milestone2ReportMilestone(m)),
-            teams <- p.teams->collect(team | thisModule.Team2ReportTeam(team))
+        report : MMOut!PortfolioReport (
+            portfolioName <- 'Portfolio Projektów',
+            generatedDate <- '2025-06-10',
+            totalProjectsCount <- portfolio.projects->size(),
+            totalBudget <- portfolio.projects->collect(p | p.budget)->sum(),
+            totalPeople <- portfolio.projects->collect(p | p.people->size())->sum()
+        ),
+        summary : MMOut!PortfolioSummary (
+            activeProjectsCount <- portfolio.projects->select(p | p.status.toString() = 'ACTIVE')->size(),
+            completedProjectsCount <- portfolio.projects->select(p | p.status.toString() = 'COMPLETED')->size(),
+            averageCompletionRate <- 0.0,
+            totalTasksCount <- portfolio.projects->collect(p | p.tasks->size())->sum(),
+            completedTasksCount <- portfolio.projects->collect(p | p.tasks->select(t | t.status.toString() = 'DONE')->size())->sum(),
+            highPriorityTasksCount <- portfolio.projects->collect(p | p.tasks->select(t | t.priority.toString() = 'HIGH')->size())->sum(),
+            overdueMilestonesCount <- 0
+        )
+    do {
+        report.summary <- summary;
+    }
+}
+
+-- Prosta reguła dla pojedynczego projektu
+rule Project2ProjectReport {
+    from
+        project : MMIn!Project
+    to
+        projectReport : MMOut!ProjectReport (
+            projectTitle <- project.title,
+            projectId <- project.title,
+            description <- project.description,
+            status <- project.status,
+            startDate <- project.startDate,
+            endDate <- project.endDate,
+            budget <- project.budget,
+            managerName <- if not project.manager.oclIsUndefined() then project.manager.name else 'Brak managera' endif,
+            totalPeople <- project.people->size(),
+            totalTasks <- project.tasks->size(),
+            completionPercentage <- if project.tasks->size() > 0 then
+                project.tasks->select(t | t.status.toString() = 'DONE')->size() * 100.0 / project.tasks->size()
+            else
+                0.0
+            endif
+        ),
+        budgetAnalysis : MMOut!BudgetAnalysis (
+            totalBudget <- project.budget,
+            spentBudget <- 0.0,
+            remainingBudget <- project.budget,
+            burnRate <- 0.0,
+            projectedCost <- 0.0,
+            budgetVariance <- 0.0
+        ),
+        timeAnalysis : MMOut!TimeAnalysis (
+            totalEstimatedHours <- project.tasks->collect(t | t.estimatedHours)->sum(),
+            totalActualHours <- project.tasks->collect(t | t.actualHours)->sum(),
+            scheduleVariance <- 0.0,
+            averageTaskCompletion <- 0.0,
+            criticalPathLength <- 0,
+            projectDuration <- 0
+        )
+    do {
+        projectReport.budgetAnalysis <- budgetAnalysis;
+        projectReport.timeAnalysis <- timeAnalysis;
+    }
+}
+
+-- Prosta reguła dla zadania
+rule Task2ReportTask {
+    from
+        task : MMIn!Task
+    to
+        reportTask : MMOut!ReportTask (
+            title <- task.title,
+            description <- task.description,
+            status <- task.status,
+            priority <- task.priority,
+            assignedTo <- if not task.assignee.oclIsUndefined() then task.assignee.name else 'Nieprzypisane' endif,
+            reviewedBy <- if not task.reviewer.oclIsUndefined() then task.reviewer.name else 'Brak reviewera' endif,
+            estimatedHours <- task.estimatedHours,
+            actualHours <- task.actualHours,
+            progressPercentage <- if task.status.toString() = 'DONE' then 100.0 else 0.0 endif,
+            startDate <- 'Nieznana',
+            duration <- task.duration,
+            dependenciesCount <- task.dependencies->size(),
+            effortDistribution <- Sequence{}
         )
 }
 
--- Lazy rule: Task → ReportTask
-lazy rule Task2ReportTask {
+-- Prosta reguła dla milestone
+rule Milestone2ReportMilestone {
     from
-        t : MMIn!Task
+        milestone : MMIn!Milestone
     to
-        rt : MMOut!ReportTask (
-            title <- t.title,
-            status <- t.status,
-            assignedTo <- if not t.assignee.oclIsUndefined() then t.assignee.name else '' endif,
-            estimatedHours <- t.estimatedHours,
-            actualHours <- t.actualHours
+        reportMilestone : MMOut!ReportMilestone (
+            name <- milestone.name,
+            description <- milestone.description,
+            dueDate <- milestone.dueDate,
+            status <- milestone.status,
+            relatedTasksCount <- milestone.tasks->size(),
+            completedTasksCount <- milestone.tasks->select(t | t.status.toString() = 'DONE')->size(),
+            riskLevel <- #LOW
         )
 }
 
--- Lazy rule: Milestone → ReportMilestone
-lazy rule Milestone2ReportMilestone {
-    from
-        m : MMIn!Milestone
-    to
-        rm : MMOut!ReportMilestone (
-            name <- m.name,
-            dueDate <- m.dueDate, -- Jeśli nadal chcesz datę, upewnij się że Ecore ją wspiera (typ EDate)
-            status <- m.status
-        )
-}
-
--- Lazy rule: Team → ReportTeam
-lazy rule Team2ReportTeam {
+-- Prosta reguła dla zespołu
+rule Team2ReportTeam {
     from
         team : MMIn!Team
     to
-        rt : MMOut!ReportTeam (
+        reportTeam : MMOut!ReportTeam (
             name <- team.name,
+            department <- team.department,
             membersCount <- team.members->size(),
-            leader <- if not team.leader.oclIsUndefined() then team.leader.name else '' endif
+            leader <- if not team.leader.oclIsUndefined() then team.leader.name else 'Brak lidera' endif,
+            averageHourlyRate <- if team.members->size() > 0 then
+                team.members->collect(m | m.hourlyRate)->sum() / team.members->size()
+            else
+                0.0
+            endif,
+            totalAvailability <- team.members->collect(m | m.availability)->sum(),
+            roleDistribution <- Sequence{},
+            skillsMatrix <- Sequence{}
         )
 }
-
-

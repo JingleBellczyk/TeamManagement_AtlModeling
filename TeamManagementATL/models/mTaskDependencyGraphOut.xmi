@@ -1,13 +1,44 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:taskDependencyGraph="http://www.example.org/taskDependencyGraph">
-  <taskDependencyGraph:TaskNode id="Analiza wymaga&#x144;" title="Analiza wymaga&#x144;" status="DONE"/>
-  <taskDependencyGraph:TaskNode id="Projekt architektury" title="Projekt architektury" status="IN_PROGRESS"/>
-  <taskDependencyGraph:TaskNode id="Implementacja modu&#x142;u klientów" title="Implementacja modu&#x142;u klientów" status="TODO"/>
-  <taskDependencyGraph:TaskNode id="Implementacja modu&#x142;u sprzeda&#x17c;y" title="Implementacja modu&#x142;u sprzeda&#x17c;y" status="TODO"/>
-  <taskDependencyGraph:TaskNode id="Testy systemowe" title="Testy systemowe" status="TODO"/>
-  <taskDependencyGraph:Dependency source="/1" target="/1" type="FINISH_TO_START"/>
-  <taskDependencyGraph:Dependency source="/2" target="/1" type="FINISH_TO_START"/>
-  <taskDependencyGraph:Dependency source="/3" target="/2" type="FINISH_TO_START"/>
-  <taskDependencyGraph:Dependency source="/4" target="/2" type="FINISH_TO_START"/>
-  <taskDependencyGraph:Dependency source="/4" target="/3" type="FINISH_TO_START"/>
-</xmi:XMI>
+<taskDependencyGraph:Graph xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:taskDependencyGraph="http://www.example.org/taskDependencyGraph">
+  <nodes id="System CRM dla firmy XYZ::Analiza wymaga&#x144;" title="Analiza wymaga&#x144;" status="DONE" projectId="System CRM dla firmy XYZ"/>
+  <nodes id="System CRM dla firmy XYZ::Projekt architektury" title="Projekt architektury" status="IN_PROGRESS" projectId="System CRM dla firmy XYZ"/>
+  <nodes id="System CRM dla firmy XYZ::Implementacja modu&#x142;u klientów" title="Implementacja modu&#x142;u klientów" status="TODO" projectId="System CRM dla firmy XYZ"/>
+  <nodes id="System CRM dla firmy XYZ::Implementacja modu&#x142;u sprzeda&#x17c;y" title="Implementacja modu&#x142;u sprzeda&#x17c;y" status="TODO" projectId="System CRM dla firmy XYZ"/>
+  <nodes id="System CRM dla firmy XYZ::Testy systemowe" title="Testy systemowe" status="TODO" projectId="System CRM dla firmy XYZ"/>
+  <nodes id="Platforma e-commerce MultiStore::Setup infrastruktury" title="Setup infrastruktury" status="DONE" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Platforma e-commerce MultiStore::Architektura API" title="Architektura API" status="IN_PROGRESS" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Platforma e-commerce MultiStore::Modu&#x142; zarz&#x105;dzania produktami" title="Modu&#x142; zarz&#x105;dzania produktami" status="TODO" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Platforma e-commerce MultiStore::System p&#x142;atno&#x15b;ci" title="System p&#x142;atno&#x15b;ci" status="TODO" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Platforma e-commerce MultiStore::Interface u&#x17c;ytkownika" title="Interface u&#x17c;ytkownika" status="TODO" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Platforma e-commerce MultiStore::Testy automatyczne" title="Testy automatyczne" status="TODO" projectId="Platforma e-commerce MultiStore"/>
+  <nodes id="Aplikacja mobilna SmartBank::Research i analiza UX" title="Research i analiza UX" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Architektura bezpiecze&#x144;stwa" title="Architektura bezpiecze&#x144;stwa" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Backend API" title="Backend API" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Aplikacja iOS" title="Aplikacja iOS" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Aplikacja Android" title="Aplikacja Android" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Integracja biometrii" title="Integracja biometrii" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <nodes id="Aplikacja mobilna SmartBank::Testy penetracyjne" title="Testy penetracyjne" status="TODO" projectId="Aplikacja mobilna SmartBank"/>
+  <dependencies source="//@nodes.1" target="//@nodes.0" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.2" target="//@nodes.1" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.3" target="//@nodes.2" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.4" target="//@nodes.2" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.4" target="//@nodes.3" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.6" target="//@nodes.5" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.7" target="//@nodes.6" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.8" target="//@nodes.7" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.9" target="//@nodes.6" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.10" target="//@nodes.7" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.10" target="//@nodes.8" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.10" target="//@nodes.9" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.12" target="//@nodes.11" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.13" target="//@nodes.12" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.14" target="//@nodes.11" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.14" target="//@nodes.13" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.15" target="//@nodes.11" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.15" target="//@nodes.13" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.16" target="//@nodes.14" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.16" target="//@nodes.15" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.17" target="//@nodes.14" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.17" target="//@nodes.15" type="FINISH_TO_START"/>
+  <dependencies source="//@nodes.17" target="//@nodes.16" type="FINISH_TO_START"/>
+</taskDependencyGraph:Graph>
