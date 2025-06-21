@@ -7,57 +7,67 @@ create OUT : MMOut from IN : MMIn;
 
 -- Główna reguła dla ProjectPortfolio -> Graph
 rule ProjectPortfolio2Graph {
-from
-    portfolio : MMIn!ProjectPortfolio
-to
-    graph : MMOut!Graph (
-        nodes <- portfolio.projects->collect(p | p.tasks)->flatten(),
-        dependencies <- portfolio.projects->collect(p | p.tasks)->flatten()
-                       ->collect(t | t.dependencies->collect(d | thisModule.CreateDependency(t, d)))->flatten()
-    )
+    from
+        portfolio : MMIn!ProjectPortfolio
+    to
+        graph : MMOut!Graph (
+            nodes <- portfolio.projects->collect(p | p.tasks)->flatten(),
+            dependencies <- portfolio.projects->collect(p | p.tasks)->flatten()
+                ->collect(t | t.dependencies->collect(d | thisModule.CreateDependency(t, d)))->flatten()
+        )
 }
 
--- Task → TaskNode z unikalnym ID uwzględniającym projekt
+-- Task → TaskNode z unikalnym ID uwzględniającym projekt  
 rule Task2Node {
-from
-    t : MMIn!Task
-to
-    node : MMOut!TaskNode (
-        id <- thisModule.getTaskUniqueId(t),
-        title <- t.title,
-        status <- t.status.toString(),
-        projectId <- thisModule.getProjectId(t)
-    )
+    from
+        t : MMIn!Task
+    to
+        node : MMOut!TaskNode (
+            id <- thisModule.getTaskUniqueId(t),
+            title <- if not t.title.oclIsUndefined() then t.title else 'Untitled Task' endif,
+            status <- t.status.toString(),
+            projectId <- thisModule.getProjectId(t)
+        )
 }
 
 -- Lazy rule: tworzy zależność między dwoma zadaniami
 lazy rule CreateDependency {
-from
-    sourceTask : MMIn!Task,
-    targetTask : MMIn!Task
-to
-    dep : MMOut!Dependency (
-        source <- thisModule.resolveTemp(sourceTask, 'node'),
-        target <- thisModule.resolveTemp(targetTask, 'node'), 
-        type <- 'FINISH_TO_START'
-    )
+    from
+        sourceTask : MMIn!Task,
+        targetTask : MMIn!Task
+    to
+        dep : MMOut!Dependency (
+            source <- thisModule.resolveTemp(sourceTask, 'node'),
+            target <- thisModule.resolveTemp(targetTask, 'node'),
+            type <- thisModule.getDependencyType(sourceTask, targetTask)
+        )
 }
 
--- Helper: tworzy unikalny ID zadania uwzględniający projekt
+-- POPRAWKA: Helper tworzy unikalny ID zadania uwzględniający projekt
 helper def: getTaskUniqueId(t : MMIn!Task) : String =
-    thisModule.getProjectId(t) + '::' + t.title;
+    let projectId : String = thisModule.getProjectId(t) in
+    let taskTitle : String = if not t.title.oclIsUndefined() then t.title else 'task_' + t.toString() endif in
+    projectId + '::' + taskTitle;
 
--- Helper: znajduje ID projektu dla zadania
+-- POPRAWKA: Helper znajduje ID projektu dla zadania (bardziej robust)
 helper def: getProjectId(t : MMIn!Task) : String =
     let project : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(t)) in
     if project.oclIsUndefined() then
         'UNKNOWN_PROJECT'
     else
-        if project.title.oclIsUndefined() then
-            'PROJECT_' + project.toString()
+        if project.title.oclIsUndefined() or project.title = '' then
+            'PROJECT_' + project.toString().substring(project.toString().lastIndexOf('@') + 1, project.toString().size())
         else
             project.title
         endif
+    endif;
+
+-- NOWY: Helper określa typ zależności na podstawie kontekstu
+helper def: getDependencyType(sourceTask : MMIn!Task, targetTask : MMIn!Task) : String =
+    if thisModule.isDependencyWithinProject(sourceTask, targetTask) then
+        'FINISH_TO_START'
+    else
+        'CROSS_PROJECT_DEPENDENCY'
     endif;
 
 -- Helper: sprawdza czy zadanie należy do określonego projektu
@@ -68,8 +78,61 @@ helper def: belongsToProject(task : MMIn!Task, project : MMIn!Project) : Boolean
 helper def: getTasksFromProject(project : MMIn!Project) : Sequence(MMIn!Task) =
     project.tasks;
 
--- Helper: sprawdza czy zależność jest wewnątrz projektu
+-- POPRAWKA: Helper sprawdza czy zależność jest wewnątrz projektu (bardziej robust)
 helper def: isDependencyWithinProject(sourceTask : MMIn!Task, targetTask : MMIn!Task) : Boolean =
     let sourceProject : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(sourceTask)) in
     let targetProject : MMIn!Project = MMIn!Project.allInstances()->any(p | p.tasks->includes(targetTask)) in
-    sourceProject = targetProject;
+    not sourceProject.oclIsUndefined() and not targetProject.oclIsUndefined() and sourceProject = targetProject;
+
+-- NOWY: Helper pobiera projekt dla zadania (bardziej bezpieczny)
+helper def: getProjectForTask(task : MMIn!Task) : MMIn!Project =
+    MMIn!Project.allInstances()->any(p | p.tasks->includes(task));
+
+-- NOWY: Helper sprawdza czy zadanie ma zależności cross-projektowe
+helper def: hasCrossProjectDependencies(task : MMIn!Task) : Boolean =
+    task.dependencies->exists(dep | not thisModule.isDependencyWithinProject(task, dep));
+
+-- NOWY: Helper liczy zadania w projekcie według statusu
+helper def: getTaskCountByStatus(project : MMIn!Project, status : String) : Integer =
+    project.tasks->select(t | t.status.toString() = status)->size();
+
+-- NOWY: Helper pobiera wszystkie zadania z określonym priorytetem
+helper def: getTasksByPriority(project : MMIn!Project, priority : String) : Sequence(MMIn!Task) =
+    project.tasks->select(t | t.priority.toString() = priority);
+
+-- NOWY: Helper sprawdza czy zadanie jest przypisane do kogoś
+helper def: isTaskAssigned(task : MMIn!Task) : Boolean =
+    not task.assignee.oclIsUndefined();
+
+-- NOWY: Helper pobiera informacje o przypisaniu osoby do projektu dla zadania
+helper def: getTaskAssignmentInfo(task : MMIn!Task) : String =
+    if not task.assignee.oclIsUndefined() then
+        let project : MMIn!Project = thisModule.getProjectForTask(task) in
+        if not project.oclIsUndefined() then
+            let assignment : MMIn!ProjectAssignment = project.assignments->any(a | a.person = task.assignee and a.isActive) in
+            if not assignment.oclIsUndefined() then
+                task.assignee.name + ' (' + assignment.role.toString() + ', ' + assignment.allocationPercentage.toString() + '%)'
+            else
+                task.assignee.name + ' (No active assignment)'
+            endif
+        else
+            task.assignee.name + ' (Unknown project)'
+        endif
+    else
+        'Unassigned'
+    endif;
+
+-- NOWY: Helper sprawdza czy projekt ma aktywne zespoły
+helper def: hasActiveTeams(project : MMIn!Project) : Boolean =
+    project.teamAssignments->exists(ta | ta.isActive);
+
+-- NOWY: Helper pobiera nazwy aktywnych zespołów w projekcie
+helper def: getActiveTeamNames(project : MMIn!Project) : Sequence(String) =
+    project.teamAssignments->select(ta | ta.isActive)->collect(ta | ta.team.name);
+
+-- NOWY: Helper sprawdza obciążenie osoby w projektach
+helper def: getPersonWorkloadAcrossProjects(person : MMIn!Person) : Integer =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    portfolio.projects->collect(p | 
+        p.assignments->select(a | a.person = person and a.isActive)->collect(a | a.allocationPercentage)
+    )->flatten()->sum();

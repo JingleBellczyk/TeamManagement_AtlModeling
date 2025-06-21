@@ -1,36 +1,50 @@
-module teamManagement2Report;
+module teamManagement2Report_COMPLETE;
 -- @path MMIn=/TeamManagementATL/metamodels/teamManagement.ecore
 -- @path MMOut=/TeamManagementATL/metamodels/projectReport.ecore
 
 create OUT : MMOut from IN : MMIn;
 
--- Jedna główna reguła bez lazy rules
+-- =====================================================
+-- GŁÓWNA REGUŁA: ProjectPortfolio -> PortfolioReport
+-- =====================================================
 rule ProjectPortfolio2PortfolioReport {
     from
         portfolio : MMIn!ProjectPortfolio
     to
         report : MMOut!PortfolioReport (
-            portfolioName <- 'Portfolio Projektów',
-            generatedDate <- '2025-06-10',
+            portfolioName <- if not portfolio.name.oclIsUndefined() then portfolio.name else 'Portfolio Projektów' endif,
+            generatedDate <- '2025-06-22',
             totalProjectsCount <- portfolio.projects->size(),
             totalBudget <- portfolio.projects->collect(p | p.budget)->sum(),
-            totalPeople <- portfolio.projects->collect(p | p.people->size())->sum()
+            totalPeople <- portfolio.people->size()
         ),
         summary : MMOut!PortfolioSummary (
             activeProjectsCount <- portfolio.projects->select(p | p.status.toString() = 'ACTIVE')->size(),
             completedProjectsCount <- portfolio.projects->select(p | p.status.toString() = 'COMPLETED')->size(),
-            averageCompletionRate <- 0.0,
+            averageCompletionRate <- if portfolio.projects->size() > 0 then
+                portfolio.projects->collect(p | 
+                    if p.tasks->size() > 0 then
+                        p.tasks->select(t | t.status.toString() = 'DONE')->size() * 100.0 / p.tasks->size()
+                    else
+                        0.0
+                    endif
+                )->sum() / portfolio.projects->size()
+            else
+                0.0
+            endif,
             totalTasksCount <- portfolio.projects->collect(p | p.tasks->size())->sum(),
             completedTasksCount <- portfolio.projects->collect(p | p.tasks->select(t | t.status.toString() = 'DONE')->size())->sum(),
-            highPriorityTasksCount <- portfolio.projects->collect(p | p.tasks->select(t | t.priority.toString() = 'HIGH')->size())->sum(),
-            overdueMilestonesCount <- 0
+            highPriorityTasksCount <- portfolio.projects->collect(p | p.tasks->select(t | t.priority.toString() = 'HIGH' or t.priority.toString() = 'CRITICAL')->size())->sum(),
+            overdueMilestonesCount <- portfolio.projects->collect(p | p.milestones->select(m | m.status.toString() = 'DELAYED')->size())->sum()
         )
     do {
         report.summary <- summary;
     }
 }
 
--- Prosta reguła dla pojedynczego projektu
+-- =====================================================
+-- REGUŁA: Project -> ProjectReport z pełnymi analizami
+-- =====================================================
 rule Project2ProjectReport {
     from
         project : MMIn!Project
@@ -44,7 +58,7 @@ rule Project2ProjectReport {
             endDate <- project.endDate,
             budget <- project.budget,
             managerName <- if not project.manager.oclIsUndefined() then project.manager.name else 'Brak managera' endif,
-            totalPeople <- project.people->size(),
+            totalPeople <- project.assignments->select(a | a.isActive)->size(),
             totalTasks <- project.tasks->size(),
             completionPercentage <- if project.tasks->size() > 0 then
                 project.tasks->select(t | t.status.toString() = 'DONE')->size() * 100.0 / project.tasks->size()
@@ -54,27 +68,45 @@ rule Project2ProjectReport {
         ),
         budgetAnalysis : MMOut!BudgetAnalysis (
             totalBudget <- project.budget,
-            spentBudget <- 0.0,
-            remainingBudget <- project.budget,
-            burnRate <- 0.0,
-            projectedCost <- 0.0,
-            budgetVariance <- 0.0
+            spentBudget <- thisModule.calculateSpentBudgetSimple(project),
+            remainingBudget <- project.budget - thisModule.calculateSpentBudgetSimple(project),
+            burnRate <- thisModule.calculateBurnRateSimple(project),
+            projectedCost <- thisModule.calculateProjectedCostSimple(project),
+            budgetVariance <- project.budget - thisModule.calculateProjectedCostSimple(project)
         ),
         timeAnalysis : MMOut!TimeAnalysis (
             totalEstimatedHours <- project.tasks->collect(t | t.estimatedHours)->sum(),
             totalActualHours <- project.tasks->collect(t | t.actualHours)->sum(),
-            scheduleVariance <- 0.0,
-            averageTaskCompletion <- 0.0,
-            criticalPathLength <- 0,
-            projectDuration <- 0
+            scheduleVariance <- if project.tasks->collect(t | t.estimatedHours)->sum() > 0 then
+                (project.tasks->collect(t | t.actualHours)->sum() - project.tasks->collect(t | t.estimatedHours)->sum()) * 100.0 / project.tasks->collect(t | t.estimatedHours)->sum()
+            else
+                0.0
+            endif,
+            averageTaskCompletion <- if project.tasks->size() > 0 then
+                project.tasks->select(t | t.status.toString() = 'DONE')->size() * 100.0 / project.tasks->size()
+            else
+                0.0
+            endif,
+            criticalPathLength <- project.tasks->collect(t | t.duration)->sum(),
+            projectDuration <- 100
+        ),
+        riskFactor : MMOut!RiskFactor (
+            description <- 'Automatycznie wykryte ryzyko projektu',
+            level <- if project.tasks->select(t | t.status.toString() = 'BLOCKED')->size() > 0 then #HIGH else #LOW endif,
+            category <- #TECHNICAL,
+            impact <- 'Zadania zablokowane: ' + project.tasks->select(t | t.status.toString() = 'BLOCKED')->size().toString(),
+            mitigation <- 'Regularne review statusu zadań'
         )
     do {
         projectReport.budgetAnalysis <- budgetAnalysis;
         projectReport.timeAnalysis <- timeAnalysis;
+        projectReport.riskFactors <- Sequence{riskFactor};
     }
 }
 
--- Prosta reguła dla zadania
+-- =====================================================
+-- REGUŁA: Task -> ReportTask z inteligentnym postępem
+-- =====================================================
 rule Task2ReportTask {
     from
         task : MMIn!Task
@@ -88,15 +120,41 @@ rule Task2ReportTask {
             reviewedBy <- if not task.reviewer.oclIsUndefined() then task.reviewer.name else 'Brak reviewera' endif,
             estimatedHours <- task.estimatedHours,
             actualHours <- task.actualHours,
-            progressPercentage <- if task.status.toString() = 'DONE' then 100.0 else 0.0 endif,
-            startDate <- 'Nieznana',
+            progressPercentage <- if task.status.toString() = 'DONE' then 
+                100.0
+            else if task.status.toString() = 'IN_PROGRESS' then
+                if task.estimatedHours > 0 and task.actualHours >= 0 then
+                    let progress : Real = task.actualHours * 100.0 / task.estimatedHours in
+                    if progress > 100.0 then 100.0 else progress endif
+                else
+                    50.0
+                endif
+            else if task.status.toString() = 'REVIEW' then
+                90.0
+            else if task.status.toString() = 'TESTING' then
+                85.0
+            else if task.status.toString() = 'BLOCKED' then
+                20.0
+            else
+                0.0
+            endif endif endif endif endif,
+            startDate <- if task.start >= 0 then 'Dzień ' + task.start.toString() else 'Nieznana' endif,
             duration <- task.duration,
             dependenciesCount <- task.dependencies->size(),
-            effortDistribution <- Sequence{}
+            effortDistribution <- if task.effort->size() > 0 then
+                task.effort->collect(e | 
+                    let personName : String = if not e.person.oclIsUndefined() then e.person.name else 'Unknown' endif in
+                    personName + ': ' + e.percentage.toString() + '% (planned: ' + e.plannedHours.toString() + 'h, actual: ' + e.actualHours.toString() + 'h)'
+                )
+            else
+                Sequence{'No effort assigned'}
+            endif
         )
 }
 
--- Prosta reguła dla milestone
+-- =====================================================
+-- REGUŁA: Milestone -> ReportMilestone z risk assessment
+-- =====================================================
 rule Milestone2ReportMilestone {
     from
         milestone : MMIn!Milestone
@@ -108,27 +166,167 @@ rule Milestone2ReportMilestone {
             status <- milestone.status,
             relatedTasksCount <- milestone.tasks->size(),
             completedTasksCount <- milestone.tasks->select(t | t.status.toString() = 'DONE')->size(),
-            riskLevel <- #LOW
+            riskLevel <- if milestone.status.toString() = 'DELAYED' then
+                #HIGH
+            else if milestone.tasks->select(t | t.status.toString() = 'BLOCKED')->size() > 0 then
+                #MEDIUM  
+            else if milestone.tasks->select(t | t.priority.toString() = 'CRITICAL')->size() > 0 then
+                #MEDIUM
+            else
+                #LOW
+            endif endif endif
         )
 }
 
--- Prosta reguła dla zespołu
-rule Team2ReportTeam {
+-- =====================================================
+-- REGUŁA: TeamAssignment -> ReportTeam z analizą ról i umiejętności
+-- =====================================================
+rule TeamAssignment2ReportTeam {
     from
-        team : MMIn!Team
+        teamAssignment : MMIn!TeamAssignment (teamAssignment.isActive)
     to
         reportTeam : MMOut!ReportTeam (
-            name <- team.name,
-            department <- team.department,
-            membersCount <- team.members->size(),
-            leader <- if not team.leader.oclIsUndefined() then team.leader.name else 'Brak lidera' endif,
-            averageHourlyRate <- if team.members->size() > 0 then
-                team.members->collect(m | m.hourlyRate)->sum() / team.members->size()
-            else
-                0.0
-            endif,
-            totalAvailability <- team.members->collect(m | m.availability)->sum(),
-            roleDistribution <- Sequence{},
-            skillsMatrix <- Sequence{}
+            name <- teamAssignment.team.name,
+            department <- teamAssignment.team.department,
+            membersCount <- thisModule.getTeamMembersCount(teamAssignment.team),
+            leader <- if not teamAssignment.team.leader.oclIsUndefined() then teamAssignment.team.leader.name else 'Brak lidera' endif,
+            averageHourlyRate <- thisModule.calculateAverageHourlyRate(teamAssignment.team),
+            totalAvailability <- thisModule.calculateTotalTeamAvailability(teamAssignment.team),
+            roleDistribution <- thisModule.generateRoleDistributionObjects(teamAssignment.team),
+            skillsMatrix <- thisModule.generateSkillsMatrixObjects(teamAssignment.team)
+        )
+}
+
+-- =====================================================
+-- HELPER FUNCTIONS - Obliczenia budżetowe
+-- =====================================================
+
+-- Prosta wersja obliczania wydanego budżetu
+helper def: calculateSpentBudgetSimple(project : MMIn!Project) : Real =
+    let totalActualHours : Integer = project.tasks->collect(t | t.actualHours)->sum() in
+    let averageRate : Real = if project.assignments->select(a | a.isActive)->size() > 0 then
+        project.assignments->select(a | a.isActive)->collect(a | a.person.hourlyRate)->sum() / project.assignments->select(a | a.isActive)->size()
+    else
+        50.0
+    endif in
+    totalActualHours * averageRate;
+
+-- Prosta wersja burn rate
+helper def: calculateBurnRateSimple(project : MMIn!Project) : Real =
+    let spentBudget : Real = thisModule.calculateSpentBudgetSimple(project) in
+    if spentBudget > 0.0 then spentBudget / 30.0 else 0.0 endif;
+
+-- Prosta wersja przewidywanego kosztu
+helper def: calculateProjectedCostSimple(project : MMIn!Project) : Real =
+    let totalEstimatedHours : Integer = project.tasks->collect(t | t.estimatedHours)->sum() in
+    let averageRate : Real = if project.assignments->select(a | a.isActive)->size() > 0 then
+        project.assignments->select(a | a.isActive)->collect(a | a.person.hourlyRate)->sum() / project.assignments->select(a | a.isActive)->size()
+    else
+        50.0
+    endif in
+    totalEstimatedHours * averageRate;
+
+-- =====================================================
+-- HELPER FUNCTIONS - Analiza zespołów
+-- =====================================================
+
+-- Liczy członków zespołu przez TeamMembership
+helper def: getTeamMembersCount(team : MMIn!Team) : Integer =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    if not portfolio.oclIsUndefined() then
+        portfolio.people->select(p | 
+            p.teamMemberships->exists(tm | tm.team = team and tm.isActive)
+        )->size()
+    else
+        0
+    endif;
+
+-- Oblicza średnią stawkę godzinową zespołu
+helper def: calculateAverageHourlyRate(team : MMIn!Team) : Real =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    if not portfolio.oclIsUndefined() then
+        let teamMembers : Sequence(MMIn!Person) = portfolio.people->select(p | 
+            p.teamMemberships->exists(tm | tm.team = team and tm.isActive)
+        ) in
+        if teamMembers->size() > 0 then
+            teamMembers->collect(p | p.hourlyRate)->sum() / teamMembers->size()
+        else
+            0.0
+        endif
+    else
+        0.0
+    endif;
+
+-- Oblicza całkowitą dostępność zespołu
+helper def: calculateTotalTeamAvailability(team : MMIn!Team) : Real =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    if not portfolio.oclIsUndefined() then
+        let teamMembers : Sequence(MMIn!Person) = portfolio.people->select(p | 
+            p.teamMemberships->exists(tm | tm.team = team and tm.isActive)
+        ) in
+        teamMembers->collect(p | p.maxAvailabilityPercentage)->sum()
+    else
+        0.0
+    endif;
+
+-- =====================================================
+-- HELPER FUNCTIONS - Generowanie zaawansowanych obiektów
+-- =====================================================
+
+-- Helper function do generowania RoleDistribution obiektów
+helper def: generateRoleDistributionObjects(team : MMIn!Team) : Sequence(MMOut!RoleDistribution) =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    let teamMembers : Sequence(MMIn!Person) = portfolio.people->select(p | 
+        p.teamMemberships->exists(tm | tm.team = team and tm.isActive)
+    ) in
+    let uniqueRoles : Set(MMIn!PersonRole) = teamMembers->collect(p | p.primaryRole)->asSet() in
+    uniqueRoles->collect(role |
+        let peopleWithRole : Sequence(MMIn!Person) = teamMembers->select(p | p.primaryRole = role) in
+        let avgRate : Real = if peopleWithRole->size() > 0 then 
+            peopleWithRole->collect(p | p.hourlyRate)->sum() / peopleWithRole->size() 
+        else 
+            0.0 
+        endif in
+        thisModule.CreateRoleDistribution(role.toString(), peopleWithRole->size(), avgRate)
+    );
+
+-- Helper function do generowania SkillEntry obiektów  
+helper def: generateSkillsMatrixObjects(team : MMIn!Team) : Sequence(MMOut!SkillEntry) =
+    let portfolio : MMIn!ProjectPortfolio = MMIn!ProjectPortfolio.allInstances()->first() in
+    let teamMembers : Sequence(MMIn!Person) = portfolio.people->select(p | 
+        p.teamMemberships->exists(tm | tm.team = team and tm.isActive)
+    ) in
+    let allSkills : Sequence(String) = teamMembers->collect(p | p.skills)->flatten() in
+    let uniqueSkills : Set(String) = allSkills->asSet() in
+    uniqueSkills->collect(skill |
+        let peopleWithSkill : Integer = teamMembers->select(p | p.skills->includes(skill))->size() in
+        thisModule.CreateSkillEntry(skill, peopleWithSkill)
+    );
+
+-- =====================================================
+-- LAZY RULES do tworzenia obiektów
+-- =====================================================
+
+lazy rule CreateRoleDistribution {
+    from
+        role : String,
+        count : Integer,
+        avgRate : Real
+    to
+        roleDistribution : MMOut!RoleDistribution (
+            role <- role,
+            count <- count,
+            averageRate <- avgRate
+        )
+}
+
+lazy rule CreateSkillEntry {
+    from
+        skill : String,
+        peopleCount : Integer  
+    to
+        skillEntry : MMOut!SkillEntry (
+            skill <- skill,
+            peopleWithSkill <- peopleCount
         )
 }

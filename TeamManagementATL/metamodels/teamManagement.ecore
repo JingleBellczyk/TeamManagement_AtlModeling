@@ -9,6 +9,11 @@
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="description" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="projects" upperBound="-1"
         eType="#//Project" containment="true"/>
+    <!-- ZMIANA: Dodanie centralnego rejestru osób i zespołów -->
+    <eStructuralFeatures xsi:type="ecore:EReference" name="people" upperBound="-1"
+        eType="#//Person" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="teams" upperBound="-1"
+        eType="#//Team" containment="true"/>
   </eClassifiers>
 
   <eClassifiers xsi:type="ecore:EClass" name="Project">
@@ -21,12 +26,32 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="manager" eType="#//Person"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="tasks" upperBound="-1"
         eType="#//Task" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="people" upperBound="-1"
-        eType="#//Person" containment="true"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="teams" upperBound="-1"
-        eType="#//Team" containment="true"/>
+    <!-- ZMIANA: Usunięcie containment dla people i teams, dodanie ProjectAssignment -->
+    <eStructuralFeatures xsi:type="ecore:EReference" name="assignments" upperBound="-1"
+        eType="#//ProjectAssignment" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="teamAssignments" upperBound="-1"
+        eType="#//TeamAssignment" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="milestones" upperBound="-1"
         eType="#//Milestone" containment="true"/>
+  </eClassifiers>
+  
+  <!-- NOWA KLASA: Przypisanie osoby do projektu -->
+  <eClassifiers xsi:type="ecore:EClass" name="ProjectAssignment">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="person" eType="#//Person"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="role" eType="#//PersonRole"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="endDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="allocationPercentage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isActive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+  
+  <!-- NOWA KLASA: Przypisanie zespołu do projektu -->
+  <eClassifiers xsi:type="ecore:EClass" name="TeamAssignment">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="team" eType="#//Team"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="endDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="responsibility" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isActive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
   </eClassifiers>
   
   <eClassifiers xsi:type="ecore:EClass" name="Task">
@@ -51,20 +76,35 @@
   <eClassifiers xsi:type="ecore:EClass" name="Person">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="email" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="role" eType="#//PersonRole"/>
+    <!-- ZMIANA: Usunięcie pojedynczej roli - rola jest teraz w ProjectAssignment -->
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="primaryRole" eType="#//PersonRole"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="skills" upperBound="-1"
         eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="availability" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxAvailabilityPercentage" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="hourlyRate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EDouble"/>
+    <!-- ZMIANA: Usunięcie pojedynczej referencji do team -->
+    <eStructuralFeatures xsi:type="ecore:EReference" name="teamMemberships" upperBound="-1"
+        eType="#//TeamMembership" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isActive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
+  </eClassifiers>
+  
+  <!-- NOWA KLASA: Członkostwo w zespole -->
+  <eClassifiers xsi:type="ecore:EClass" name="TeamMembership">
     <eStructuralFeatures xsi:type="ecore:EReference" name="team" eType="#//Team"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="startDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="endDate" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="roleInTeam" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isActive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
   </eClassifiers>
   
   <eClassifiers xsi:type="ecore:EClass" name="Team">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="department" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="leader" eType="#//Person"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="members" upperBound="-1"
-        eType="#//Person"/>
+    <!-- ZMIANA: Usunięcie bezpośredniej referencji do members -->
+    <!-- Członkowie są teraz dostępni przez TeamMembership -->
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="maxCapacity" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="isActive" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
   </eClassifiers>
   
   <eClassifiers xsi:type="ecore:EClass" name="Effort">
@@ -117,7 +157,6 @@
     <eLiterals name="CRITICAL" value="3" literal="CRITICAL"/>
   </eClassifiers>
   
-  <!-- Rozszerzony enum PersonRole z wszystkimi rolami z projektów -->
   <eClassifiers xsi:type="ecore:EEnum" name="PersonRole">
     <eLiterals name="DEVELOPER" literal="DEVELOPER"/>
     <eLiterals name="SENIOR_DEVELOPER" value="1" literal="SENIOR_DEVELOPER"/>
